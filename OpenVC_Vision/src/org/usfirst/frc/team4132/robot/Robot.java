@@ -66,8 +66,8 @@ public class Robot extends IterativeRobot {
             //camera_two.setResolution(640, 480);
             
            // camera.setWhiteBalanceAuto();
-            camera.setBrightness(20);
-            camera.setExposureManual(2);
+            camera.setBrightness(8);
+            camera.setExposureManual(5);
             
             
             
@@ -103,7 +103,10 @@ public class Robot extends IterativeRobot {
                 int size=(int)(source.total()*source.channels());
 
                 byte[] pixels=new byte[size];
+                int pixelValues[][]=new int[output.rows()][output.cols()];
                 output.get(0, 0,pixels);
+                
+                
                 ///bgr , -1 is the lowest value
                 /*
                 System.out.print(convertColor(pixels[450000])+" ");
@@ -123,11 +126,40 @@ public class Robot extends IterativeRobot {
                 }*/
                 System.out.println("pixel value "+pixels[42]);
                 for(int x=0; x<pixels.length; x++){
-                	if(pixels[x]>50)
-                		pixels[x]=(byte)127;
+                	if(convertColor(pixels[x])>200){
+                		pixels[x]=(byte)255;
+                		pixelValues[(int)x/640][x%640]=1;
+                	}else{
+                		pixels[x]=(byte) 0;
+                		
+                	}
+                	
+                	/*where s(x,y)=summed area whatever, i(x.y)=current pixel value s(x,y)
+                	 * =i(x,y)+s(x-1, y)+s(x,y-1)-s(x-1,y-1)
+                	 */
+                	//checks for pixel above
+                	if( ((int)x/640)-1>0){
+                		pixelValues[(int)x/640][x%640]+=pixelValues[((int)x/640) - 1][x%640];
+                	}
+                	//checks for pxiel to the right
+                	if( x%640>0){
+                		pixelValues[(int)x/640][x%640]+=pixelValues[((int)x/640)][(x%640) - 1];
+                	}
+                	//checks for pixel above and to the right
+                	if(x%640>0 && ((int)x/640)-1>0){
+                		pixelValues[(int)x/640][x%640]-=pixelValues[((int)x/640)-1][(x%640) - 1];
+                	}
+                	
+                	System.out.println("image volume" + getIImageVolume(pixelValues[479][639], pixelValues[240][320], pixelValues[240][639], pixelValues[479][320]) );
+                	
+                	
+                		
+                	
                 }
+                
                 //System.out.println(get3DDistance(1,1,1,4,5,6));
                 output.put(0, 0, pixels);
+                
                 
                 
                 
@@ -136,7 +168,7 @@ public class Robot extends IterativeRobot {
                 
                 
                 outputStream.putFrame(output);
-                //System.out.println("brightness :"+ camera.getBrightness());
+                //System.out.println("brightness :"+ camera.getBrightness());++
                 //gray returns array length of one;
                 /*
                 double pixel[]=source.get(0, 0);
@@ -212,7 +244,7 @@ public class Robot extends IterativeRobot {
 		
 	}
 	
-	public double convertColor(int x){
+	private double convertColor(int x){
 		if(x>0){
 			return x;
 		}
@@ -221,7 +253,7 @@ public class Robot extends IterativeRobot {
 	}
 	
 	//really slow
-	public Color getColor(double blue, double green, double red){
+	private Color getColor(double blue, double green, double red){
 		
 		double dFromBlue=get3DDistanceSqr(blue, green, red, BLUE[0], BLUE[1], BLUE[2]);
 		double dFromGreen=get3DDistanceSqr(blue, green, red, GREEN[0], GREEN[1], GREEN[2]);
@@ -238,8 +270,12 @@ public class Robot extends IterativeRobot {
 		
 	}
 	
-	public double get3DDistanceSqr(double a, double b, double c, double x, double y, double z){
+	private double get3DDistanceSqr(double a, double b, double c, double x, double y, double z){
 		return ( x-a)*(x-a) + (y-b)*(y-b)+ ( z-c)*(z-c);
+	}
+	
+	private int getIImageVolume(int bottomR, int topL, int bottomL, int topR){
+		return bottomR+topL-bottomL-topR;
 	}
 	
 }

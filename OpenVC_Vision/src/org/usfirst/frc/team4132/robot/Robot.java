@@ -97,27 +97,27 @@ public class Robot extends IterativeRobot {
                 byte[] pixels=new byte[size];
                 output.get(0, 0,pixels);
                 
+                int lineOneL=0, lineTwoL=0, lineThreeL=0;
+                boolean lineOneV=false, lineTwoV=false, lineThreeV=false;
+                int temp=0;
                 
-              
-                
-                
-                
-                
-                
-                for(int x=0; x<output.cols(); x++){
-                	boolean lineOneV=false, lineTwoV=false, lineThreeV=false;
-                	int lineOneL=0, lineTwoL=0, lineThreeL=0;
-                	
-                	int temp=0;
+                for(int x=0; x<output.cols(); x+=3){
+                	lineOneV=false;
+                	lineTwoV=false;
+                	lineThreeV=false;
+                	lineOneL=0;
+                	lineTwoL=0;
+                	lineThreeL=0;
+                	temp=0;
                 	
                 	//if true, white
                 	boolean lastLineValue=convertColor(pixels[x])>200;
                 	for(int y=0; y+x<pixels.length; y+=output.cols()){
 	                	///test lines aren't equal spacing
                 		///loop through, if switch color, record line value, test if propotions match
-                		pixels[x+y]=0;
+                		
                 		if(lastLineValue!=convertColor(pixels[x+y])>200){
-                			pixels[x+y]=0;
+                			
                 			
                 			lineOneL=lineTwoL;
                 			lineTwoL=lineThreeL;
@@ -128,16 +128,22 @@ public class Robot extends IterativeRobot {
                 			lineThreeV=lastLineValue;
                 			
                 			lastLineValue=convertColor(pixels[x+y])>200;
-                			temp=0;
+                			temp=1;
                 			
-                			if(lineOneV==true && lineTwoV==false && lineThreeV==true){
-                				double lineOneRatio=(lineOneL)/(lineOneL+lineTwoL+lineThreeL);
-                				double lineTwoRatio=(lineTwoL)/(lineOneL+lineTwoL+lineThreeL);
-                				if( lineOneRatio>.3 && lineOneRatio<.5 && lineTwoRatio>.3 && lineTwoRatio<.5){
-                					pixels[x+y]=(byte)255;
-                					System.out.println("colum :"+x);
-                				}
+                			if(lineOneV==true && lineTwoV==false && lineThreeV==true && lineOneL>10 && lineTwoL>10 && lineThreeL>10){
+                				double totalLength=lineOneL+lineTwoL+lineThreeL;
+                				double lineOneRatio=(lineOneL)/totalLength;
+                				double lineTwoRatio=(lineTwoL)/totalLength;
                 				
+                				if( lineOneRatio>.3 && lineOneRatio<.5 && lineTwoRatio>.3 && lineTwoRatio<.5){
+                					System.out.println("line1:" + lineOneRatio +"line2: " +lineTwoRatio);
+                					
+                					for(int j=0; j+x<pixels.length; j+=output.cols()){
+                						pixels[j+x]=0;
+                					}
+                					
+                				}
+                				//System.out.println("line1:" + lineOneL +"line2: " +lineTwoL+ "line3: " +lineThreeL);
                 				
                 			}
                 		}else{

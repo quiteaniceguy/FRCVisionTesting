@@ -72,7 +72,7 @@ public class Robot extends IterativeRobot {
             
             
             CvSink cvSink = CameraServer.getInstance().getVideo("cam0");
-            CvSource outputStream = CameraServer.getInstance().putVideo("Blur", 320, 240);
+            CvSource outputStream = CameraServer.getInstance().putVideo("Blur", 640, 480);
             
             
             
@@ -100,6 +100,13 @@ public class Robot extends IterativeRobot {
                 int lineOneL=0, lineTwoL=0, lineThreeL=0;
                 boolean lineOneV=false, lineTwoV=false, lineThreeV=false;
                 int temp=0;
+                int start=0; //the start of the cylinder
+                int end=-1; // the end of the cylinder
+                int pointx=0;
+                int pointy=0;
+                int lastColumnValue=0; //whether the last column tested positive
+                //each loop, if it tests positive it will set 
+                
                 
                 for(int x=0; x<output.cols(); x+=3){
                 	lineOneV=false;
@@ -136,25 +143,81 @@ public class Robot extends IterativeRobot {
                 				double lineTwoRatio=(lineTwoL)/totalLength;
                 				
                 				if( lineOneRatio>.3 && lineOneRatio<.5 && lineTwoRatio>.3 && lineTwoRatio<.5){
-                					System.out.println("line1:" + lineOneRatio +"line2: " +lineTwoRatio);
-                					
-                					for(int j=0; j+x<pixels.length; j+=output.cols()){
-                						pixels[j+x]=0;
+                					if(lastColumnValue==0){//starts are not starting
+                						start=x;
                 					}
+                					lastColumnValue=1;
                 					
+                					break;
+                				}
+                				else{
+                					lastColumnValue=0;
                 				}
                 				//System.out.println("line1:" + lineOneL +"line2: " +lineTwoL+ "line3: " +lineThreeL);
                 				
                 			}
                 		}else{
                 			temp++;
+                		} 
+                		if(y+x+output.cols()>pixels.length){
+                			lastColumnValue=0;
                 		}
-                		
                 	
                 	}
+                	if(lastColumnValue==0 && start !=0 && end==-1){
+                		end=x;
                 		
-                	
+                	}
                 }
+                
+                /*
+                System.out.println("start"+start+"end" + end);
+                System.out.println("center :" + (start+end)/2);
+                */
+                ///THIS DOES WORK
+                pointx=(int)( 640*Math.tan((Math.atan(((double)(start)-320)/640.0)+Math.atan(((double)(end)-320)/640.0))/2) );
+                boolean lastLineValue=convertColor(pixels[pointx])>200;
+                for(int y=0; y+pointx<pixels.length; y+=output.cols()){ //take the center line and find the y-value, find it for the top point later, currently finds the bottom point
+                	
+            		if(lastLineValue!=convertColor(pixels[pointx+y])>200){
+            			
+            			
+            			lineOneL=lineTwoL;
+            			lineTwoL=lineThreeL;
+            			lineThreeL=temp;
+            			
+            			lineOneV=lineTwoV;
+            			lineTwoV=lineThreeV;
+            			lineThreeV=lastLineValue;
+            			
+            			lastLineValue=convertColor(pixels[pointx+y])>200;
+            			temp=1;
+            			
+            			if(lineOneV==true && lineTwoV==false && lineThreeV==true && lineOneL>10 && lineTwoL>10 && lineThreeL>10){
+            				double totalLength=lineOneL+lineTwoL+lineThreeL;
+            				double lineOneRatio=(lineOneL)/totalLength;
+            				double lineTwoRatio=(lineTwoL)/totalLength;
+            				
+            				if( lineOneRatio>.3 && lineOneRatio<.5 && lineTwoRatio>.3 && lineTwoRatio<.5){
+
+            					pointy=y-240;
+            					
+            					break;
+            				}
+            				else{
+            					lastColumnValue=0;
+            				}
+            				//System.out.println("line1:" + lineOneL +"line2: " +lineTwoL+ "line3: " +lineThreeL);
+            				
+            			}
+            		}else{
+            			temp++;
+            		} 
+                }
+                //at this point, we should have a pointx and pointy
+                double distance;
+                double pointh=78.0;
+                distance=(Math.sqrt((pointx)^2+640^2)*pointh/(double)(pointy));
                 
                 
                 //System.out.println(get3DDistance(1,1,1,4,5,6));
@@ -164,10 +227,11 @@ public class Robot extends IterativeRobot {
                 
                 
         		//output.put(1,1,0);
-               
+            
                 
                 
                 outputStream.putFrame(output);
+            
                 //System.out.println("brightness :"+ camera.getBrightness());++
                 //gray returns array length of one;
                 /*
